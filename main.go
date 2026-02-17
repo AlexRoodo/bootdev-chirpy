@@ -10,8 +10,8 @@ func main() {
 	const port = "8080"
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/", appHandler())
-	mux.HandleFunc("/healthz", healthHandler)
+	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("./"))))
+	mux.HandleFunc("/healthz", handlerReadiness)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -22,12 +22,8 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-func healthHandler(resp http.ResponseWriter, req *http.Request) {
-	resp.Header().Add("content-type", "text/plain; charset=utf-8")
-	resp.WriteHeader(200)
-	resp.Write([]byte("OK"))
-}
-
-func appHandler() http.Handler {
-	return http.StripPrefix("/app", http.FileServer(http.Dir("./")))
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("content-type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
